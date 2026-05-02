@@ -1,3 +1,4 @@
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root {
     --color-background-primary: #000000;
@@ -5,62 +6,76 @@
     --color-text-secondary: #e8e8e8;
     --color-text-tertiary: #888;
     --color-border-secondary: #ffffff;
-    --border-radius-xl: 18px;
+    --border-radius-base: 0.5rem;
+    --font-size-base: 1rem;
   }
 
   html,
   body {
     background: var(--color-background-primary);
     color: var(--color-text-primary);
-    min-height: 100vh;
     margin: 0;
     padding: 0;
+  }
+  * {
     box-sizing: border-box;
-    width: 100%;
-    height: 100%;
-    overflow-x: hidden;
   }
 
   body {
-    padding: 1rem;
     box-sizing: border-box;
-    min-height: 100vh;
-    width: 100%;
   }
 
   .card-wrap {
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2rem 1rem;
+    padding: 16vh 10vw;
     font-family: "DM Sans", sans-serif;
 
     .counter {
-      font-size: 12px;
+      font-size: 0.75rem;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--color-text-tertiary);
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
     }
 
     .card {
-      border: 0.5px solid var(--color-border-secondary);
-      border-radius: var(--border-radius-xl);
       padding: 3rem 2.5rem;
-      max-width: 480px;
       width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
       text-align: center;
-      position: relative;
       transition:
         opacity 0.25s ease,
         transform 0.25s ease;
-      box-shadow: 0 2px 24px 0 rgba(0, 0, 0, 0.25);
+      box-shadow: inset 0px 0px 0px 1px white;
+      position: relative;
+
+      &::after,
+      &::before {
+        content: "";
+        background: white;
+        position: absolute;
+      }
+      &::after {
+        width: 100%;
+        height: 6px;
+        left: 3px;
+        bottom: 0;
+        transform: translatey(100%) skewx(45deg);
+      }
+      &::before {
+        width: 6px;
+        height: 100%;
+        right: 0;
+        transform: translatex(100%) skewy(45deg);
+        top: 3px;
+      }
 
       &.fade-out {
         opacity: 0;
@@ -71,36 +86,44 @@
         font-family: "DM Sans", sans-serif;
         font-size: 14px;
         line-height: 1.55;
-        font-weight: 400;
+        font-weight: 600;
         color: var(--color-text-primary);
+        transition:
+          opacity 0.25s ease,
+          transform 0.25s ease;
+      }
+      .card-text.fade-out {
+        opacity: 0;
+        transform: translateY(6px);
       }
     }
 
     .nav {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-top: 1.75rem;
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      top: 0;
+
+      display: grid;
+      grid-template-areas:
+        "prev next"
+        "remove remove";
+      grid-template-rows: 1fr 10vh;
 
       button {
         opacity: 0;
         background: transparent;
         cursor: pointer;
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 50vw;
-        height: 75vh;
-        &.primary {
-          left: auto;
-          right: 0;
+        &#prev-btn {
+          grid-area: prev;
+        }
+        &#next-btn {
+          grid-area: next;
         }
         &#remove-btn {
-          top: auto;
-          bottom: 0;
-          width: 100vw;
-          height: 25vh;
-          color: var(--color-text-secondary);
+          grid-area: remove;
+          color: var(--color-text-tertiary);
           border: none;
           opacity: 1;
         }
@@ -118,7 +141,7 @@
 
   <div class="nav">
     <button id="prev-btn" onclick="navigate(-1)">← back</button>
-    <button class="primary" id="next-btn" onclick="navigate(1)">next →</button>
+    <button id="next-btn" onclick="navigate(1)">next →</button>
     <button id="remove-btn" onclick="removeCurrent()">
       Exclude this question
     </button>
@@ -344,11 +367,11 @@
     }
 
     if (animate) {
-      card.classList.add("fade-out");
+      text.classList.add("fade-out");
       setTimeout(() => {
         text.textContent = questions[current];
         counter.textContent = current + 1 + " / " + questions.length;
-        card.classList.remove("fade-out");
+        text.classList.remove("fade-out");
       }, 220);
     } else {
       text.textContent = questions[current];

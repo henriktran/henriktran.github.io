@@ -1,0 +1,385 @@
+<style>
+  :root {
+    --color-background-primary: #000000;
+    --color-text-primary: #fff;
+    --color-text-secondary: #e8e8e8;
+    --color-text-tertiary: #888;
+    --color-border-secondary: #ffffff;
+    --border-radius-xl: 18px;
+  }
+
+  html,
+  body {
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    padding: 1rem;
+    box-sizing: border-box;
+    min-height: 100vh;
+    width: 100%;
+  }
+
+  .card-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    font-family: "DM Sans", sans-serif;
+
+    .counter {
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-text-tertiary);
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-xl);
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      transition:
+        opacity 0.25s ease,
+        transform 0.25s ease;
+      box-shadow: 0 2px 24px 0 rgba(0, 0, 0, 0.25);
+
+      &.fade-out {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      .card-text {
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        line-height: 1.55;
+        font-weight: 400;
+        color: var(--color-text-primary);
+      }
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 1.75rem;
+
+      button {
+        opacity: 0;
+        background: transparent;
+        cursor: pointer;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 50vw;
+        height: 75vh;
+        &.primary {
+          left: auto;
+          right: 0;
+        }
+        &#remove-btn {
+          top: auto;
+          bottom: 0;
+          width: 100vw;
+          height: 25vh;
+          color: var(--color-text-secondary);
+          border: none;
+          opacity: 1;
+        }
+      }
+    }
+  }
+</style>
+
+<div class="card-wrap">
+  <div class="counter" id="counter">1 / 20</div>
+
+  <div class="card" id="card">
+    <p class="card-text" id="q-text"></p>
+  </div>
+
+  <div class="nav">
+    <button id="prev-btn" onclick="navigate(-1)">← back</button>
+    <button class="primary" id="next-btn" onclick="navigate(1)">next →</button>
+    <button id="remove-btn" onclick="removeCurrent()">
+      Exclude this question
+    </button>
+  </div>
+</div>
+
+<script>
+  // Load removed questions from localStorage
+  const REMOVED_KEY = "removedQuestions";
+  let removedQuestions = JSON.parse(localStorage.getItem(REMOVED_KEY) || "[]");
+
+  // Original questions array
+  const allQuestions = [
+    // fun & playful
+    "If we had to swap roles for a full week — jobs, chores, routines, everything — what's the first thing you'd complain about?",
+    "If our relationship was a movie, what genre would it be — and who would play us?",
+    "If you had to describe me using only three emojis, what would they be — and why?",
+    "What's something I do that you secretly find adorable but would never admit in front of our friends?",
+    "If we had to compete against each other on a reality TV show, which show would we absolutely destroy — and which one would end in a breakup?",
+    "If our friend group had to vote on which one of us would survive longest in the wild, who wins — and what's their reasoning?",
+    "What's a completely useless skill I have that you secretly find impressive?",
+    "If you could only describe our first impression of each other using a weather forecast, what would it be?",
+    "If we opened a business together, what would it be — and how long before one of us gets fired?",
+    "What's a hill you'd absolutely die on in an argument with me — even if you knew you were wrong?",
+    "If you could delete one habit of mine forever, what would it be — and what habit of yours do you think I'd delete?",
+    "If we got stranded on a deserted island, what's the one thing I'd do within the first hour that would either save us or get us both killed?",
+    "If our relationship had a theme song that played every time we walked into a room together, what would it be?",
+    "If you had to bet money on which one of us would accidentally start a viral internet moment, who is it — and what would they be doing?",
+    "If we were a duo in a heist movie, what would your role be — and would you trust me not to double-cross you?",
+    "If I had a warning label, what would it say?",
+    "If you had to rate me as a teammate in each of these — driver, navigator, grocery shopper, and hype person — what's my score out of 10?",
+    "If we got a couples' tattoo but it had to be something embarrassingly specific to us, what would it be?",
+    "What's the most 'us' thing we've ever done that would sound completely unhinged if you tried to explain it to a stranger?",
+    "If there was a documentary made about our relationship, what would the dramatic narrator say in the opening line?",
+    "If you could only communicate with me using GIFs for one full day, which one would you use the most?",
+    "If we competed on a cooking show together, what dish would we make — and who would do the most damage in the kitchen?",
+    "What's a movie or TV show you secretly think describes our dynamic perfectly?",
+    "If you had to describe our relationship as a sport, what would it be and why?",
+    "If we had a group chat name just for the two of us, what would it be?",
+
+    // deeper & meaningful
+    "If we could pause time for 24 hours — just the two of us, no responsibilities — what would your perfect day look like from morning to night?",
+    "What's a small thing I do that makes you feel most loved, even if I don't realise it?",
+    "What's something you've always wanted to do together but haven't brought up yet?",
+    "If you could relive one moment from our relationship on repeat, what would it be?",
+    "What's a version of our future that excites you most — even if it feels far away?",
+    "Is there something I did early on that you thought was a green flag but didn't tell me at the time?",
+    "What's a fear you had about us in the beginning that turned out to be wrong?",
+    "What's something you've learned about yourself because of being with me?",
+    "If you had to write the dedication page of a book about your life, would I be in it — and what would it say?",
+    "What's a value or belief of mine that you've come to respect more over time?",
+    "What's something you think we handle really well as a team?",
+    "Is there something you wish we talked about more?",
+    "What's a moment where you felt really proud of me?",
+    "If you could give us one piece of advice from the future, what would it be?",
+    "What's a dream you have that you haven't told many people about?",
+
+    // would you rather & hypothetical
+    "Would you rather we live in a tiny house with everything paid off, or a big house with a scary mortgage?",
+    "Would you rather go one week without your phone or one week without me — and be honest?",
+    "If we could live anywhere in the world for one year with no practical limitations, where would you choose?",
+    "Would you rather know every argument we'll ever have, or every great memory we'll ever make?",
+    "If you could download one skill into my brain overnight, what would it be?",
+    "Would you rather I always told you the honest truth, or occasionally a kind white lie?",
+    "If we had to move to a new city tomorrow with no plan, what would be your first move?",
+    "Would you rather go back to the day we met, or fast-forward five years to see where we are?",
+    "If money was no issue, what's the first thing you'd change about our daily life?",
+    "Would you rather have a personal chef or a personal cleaner — and would we agree on this?",
+
+    // this or that about each other
+    "Am I a 'figure it out as we go' person or a 'plan everything in advance' person — and do you wish I was different?",
+    "Do you think I'm more of a comfort zone person or a jump-into-the-deep-end person?",
+    "If I were a season, which one would I be — and why?",
+    "Do you think I'm more of a morning person or a night person at heart?",
+    "If I were an item on a restaurant menu, what would I be?",
+    "Do you think I'm someone who learns from experience or from being told things?",
+    "If I were a type of weather, what would I be on a normal day — and on a bad day?",
+    "Do you think I'm the kind of person who would go back into a haunted house for a friend, or immediately sacrifice them and run?",
+    "Am I more of a 'let's figure this out together' or 'I've got this, stand back' type of person?",
+    "If I were an animal, what would I be — and is that a compliment?",
+
+    // playful & silly
+    "If you had to eat one meal every day for the rest of your life, what would it be — and how long before you regret it?",
+    "What's the most chaotic thing we could do this weekend with no budget limit?",
+    "If we had a reality show about our apartment, what would the most dramatic episode be about?",
+    "What's the pettiest thing you've ever silently judged me for?",
+    "If I was a character in a video game, what would my special move be?",
+    "What's a sentence that perfectly summarises a typical Tuesday with me?",
+    "If our relationship had a mascot, what would it be?",
+    "What's the most cursed item in our home and why do we still own it?",
+    "If you had to bet on which one of us would accidentally become internet famous, what's the scenario?",
+    "If we had a theme park ride named after us, what would it be called and what would the experience be like?",
+    "What's the weirdest inside joke we have that you could never explain to an outsider?",
+    "If our fridge could talk, what would it say about us?",
+    "What's a phrase I say so often it should be trademarked?",
+    "If we were both superheroes, would we be on the same team or rivals?",
+    "If someone wrote a tell-all book about our relationship, what would the most embarrassing chapter be?",
+    "What's the most dramatic thing I've done over something completely trivial?",
+    "If I was a school subject, which one would I be?",
+    "What's a totally irrational rule I have that you've secretly started following too?",
+    "If our relationship was a snack, what would it be?",
+    "What's a song that, if it came on in public, we'd both immediately make eye contact?",
+
+    // deep & intimate
+    "What's something you hope never changes about me?",
+    "When did you first feel like you could really be yourself around me?",
+    "What's something I've said that stuck with you longer than I probably realise?",
+    "Is there a version of your life where we don't meet — and what do you think that life looks like?",
+    "What do you think is the biggest thing we've taught each other?",
+    "What's a moment where you chose us, even when it wasn't the easiest option?",
+    "What's something you hope we're still doing together when we're 80?",
+    "Is there something you used to believe about love that being with me changed?",
+    "What do you think our relationship looks like from the outside — and do you think that matches the inside?",
+    "What's a small, ordinary moment we've shared that you'd never want to forget?",
+    "What's one thing you'd want me to know if I was ever having a really bad day without you?",
+    "When do you feel most like a team?",
+    "What's something about your childhood that you think shaped how you love people?",
+    "Is there a compliment I've given you that you think about more than I'd expect?",
+    "What's a goal you have for yourself that you'd love my support in?",
+    "What's something you appreciate about how we fight — if anything?",
+    "What does home feel like to you, and do I factor into that?",
+    "What's a version of the future you used to want that no longer feels right?",
+    "Is there something you're still figuring out about yourself that you feel safe exploring with me?",
+    "What's a belief or value you hope we pass on someday, whether to kids, friends, or just people around us?",
+
+    // hypothetical & creative
+    "If we could live inside any fictional universe for a year, where would you pick and why?",
+    "If you had to design our perfect home from scratch with unlimited budget, what's the one non-negotiable room or feature?",
+    "If we got to spend a week inside any decade in history together, which would you choose?",
+    "If you could give us one superpower to share — just us two — what would it be?",
+    "If we had to go on a trip with absolutely no phones and no plan, where would you want to start?",
+    "If a genie gave us three wishes but they could only benefit both of us equally, what would you wish for?",
+    "If we could press a reset button on one thing in our lives together, what would it be?",
+    "If we had to build something together — a house, a business, a garden — with our actual skill sets, what would it be?",
+    "If you could send a letter back to the version of me from before we met, what would you want it to say?",
+    "If we had to survive an apocalypse with only what's currently in our home, how long do you give us?",
+    "If we could be any famous duo from history, fiction, or pop culture, who would we be?",
+    "If our life together had a movie poster, what's the image, tagline, and rating?",
+    "If you had to design our perfect day — from the moment we wake up to falling asleep — what does it look like?",
+    "If we could only keep three memories from our relationship and had to delete the rest, which would you keep?",
+    "If you could teleport us anywhere in the world right now, no planning required, where do we go?",
+    "If we had to write a joint bucket list with only five items, what would make your top five?",
+    "If our relationship was a novel, what would the title be?",
+    "If we had to start completely over in a new city where no one knew us, who would we become?",
+    "If we could have dinner with any three people — dead or alive — who would you pick for the best conversation?",
+    "If you could give us one extra hour in every day just for us, what would you want to do with it?",
+
+    // personality & self-discovery
+    "What's a personality trait you have that you think I bring out more than anyone else?",
+    "What's something you're better at than you give yourself credit for?",
+    "What's a fear you had when we first got together that still lingers a little?",
+    "What's something you did before you met me that you'd love to pick back up?",
+    "Do you think you're the same person you were when we met — and if not, how have you changed?",
+    "What's something about yourself that took you a long time to accept?",
+    "Is there a version of yourself you feel like you hid for a long time that you're now more comfortable showing?",
+    "What's something you've always wanted to learn and what's stopped you?",
+    "What's a compliment you rarely receive that would mean the most to you?",
+    "What's something you do to recharge that you don't always communicate when you need it?",
+    "What's a boundary you have that you feel I genuinely respect — and does that matter to you?",
+    "What's something you've outgrown that you haven't fully said goodbye to yet?",
+    "What's a quality in yourself that you hope shows up in the people around you?",
+    "What's a habit you have that you're actually proud of, even if it seems small?",
+    "What's something you need from a relationship that you've never said out loud?",
+
+    // us & the future
+    "What's a tradition you'd love for us to start?",
+    "Is there something we used to do together that you miss and want to bring back?",
+    "What's a place you want us to go before we're too old to enjoy it properly?",
+    "What's something you want to learn together — a skill, a language, a hobby?",
+    "If we could design our ideal retirement, what does that look like?",
+    "What's something you think we'd be great at if we actually committed to doing it together?",
+    "What's a cause or thing in the world that you'd want us to contribute to in some way?",
+    "If we wrote a list of relationship rules just for us, what would be the first one?",
+    "What's something you want more of in our day-to-day life?",
+    "What does a really good week for us look like?",
+
+    // unexpected & unique
+    "If you had to describe the colour of our energy as a couple, what would it be?",
+    "What's a question you've always wanted to ask me but held back on?",
+    "If our relationship was a plant, what type would it be and how well are we tending to it?",
+    "What's a movie villain whose logic you kind of understand — and does that worry you?",
+    "If you could freeze one age and live it on repeat, what age would it be?",
+    "What's something you own that you'd never throw away, even if it's objectively useless?",
+    "What's a small luxury that makes your life noticeably better?",
+    "If you had to describe your love language using a specific scenario from our relationship, what would it be?",
+    "What's something about the world that genuinely makes you hopeful?",
+    "What's a hill you'd die on that has absolutely nothing to do with us — just a personal conviction?",
+    "If you could live someone else's life for a week just to understand them better, whose would it be?",
+    "What's a topic you could talk about for three hours straight without getting bored?",
+    "What's something that used to embarrass you that you now love about yourself?",
+    "If you had to describe our first year together in one word, what would it be?",
+    "What's the most important thing a relationship has ever taught you?",
+  ];
+
+  // Filter out removed questions
+  let questions = allQuestions.filter((q) => !removedQuestions.includes(q));
+
+  // Shuffle questions array using Fisher-Yates algorithm
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+  questions = shuffle(questions);
+
+  let current = 0;
+
+  function render(animate) {
+    const card = document.getElementById("card");
+    const text = document.getElementById("q-text");
+    const counter = document.getElementById("counter");
+    const removeBtn = document.getElementById("remove-btn");
+
+    if (questions.length === 0) {
+      text.textContent = "No more questions!";
+      counter.textContent = "0 / 0";
+      removeBtn.disabled = true;
+      return;
+    } else {
+      removeBtn.disabled = false;
+    }
+
+    if (animate) {
+      card.classList.add("fade-out");
+      setTimeout(() => {
+        text.textContent = questions[current];
+        counter.textContent = current + 1 + " / " + questions.length;
+        card.classList.remove("fade-out");
+      }, 220);
+    } else {
+      text.textContent = questions[current];
+      counter.textContent = current + 1 + " / " + questions.length;
+    }
+  }
+
+  function navigate(dir) {
+    if (questions.length === 0) return;
+    let next = current + dir;
+    if (next < 0) {
+      next = questions.length - 1;
+    } else if (next >= questions.length) {
+      next = 0;
+    }
+    current = next;
+    render(true);
+  }
+
+  function removeCurrent() {
+    if (questions.length === 0) return;
+    const toRemove = questions[current];
+    removedQuestions.push(toRemove);
+    localStorage.setItem(REMOVED_KEY, JSON.stringify(removedQuestions));
+    // Remove from questions array
+    questions.splice(current, 1);
+    if (current >= questions.length) {
+      current = 0;
+    }
+    render(false);
+  }
+
+  render(false);
+</script>
